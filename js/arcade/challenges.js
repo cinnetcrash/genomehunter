@@ -118,21 +118,18 @@
       : "Phred score = base reliability. Trim bases BELOW Q20; KEEP Q20 and above. No colors — read the score!"; },
     makeGrid: function (d, st) {
       var len = 6 + ri(4);
-      var tiles = [];
+      var qs = [];
       var anyBad = false;
-      for (var i = 0; i < len; i++) {
-        var q = 2 + ri(38); // 2..39
-        var bad = q < 20;
-        if (bad) anyBad = true;
+      for (var i = 0; i < len; i++) { var q = 2 + ri(38); qs.push(q); if (q < 20) anyBad = true; }
+      // guarantee at least one trimmable base so the round can always be cleared
+      if (!anyBad) qs[ri(len)] = 5 + ri(14); // force a Q in 5..18
+      var tiles = qs.map(function (q) {
         var b = BASES[ri(4)];
-        (function (b, q, bad) {
-          tiles.push({ correct: bad, draw: function (c, r) {
-            U.text(c, b, r.x + r.w / 2, r.y + r.h * 0.45, Math.floor(r.h * 0.34), "#eaf2ff", "center");
-            U.text(c, "Q" + q, r.x + r.w / 2, r.y + r.h - 5, 11, "#9fb3d6", "center");
-          } });
-        })(b, q, bad);
-      }
-      if (!anyBad) { tiles[ri(tiles.length)].correct = true; tiles[ri(tiles.length)].draw = tiles[0].draw; }
+        return { correct: q < 20, draw: function (c, r) {
+          U.text(c, b, r.x + r.w / 2, r.y + r.h * 0.45, Math.floor(r.h * 0.34), "#eaf2ff", "center");
+          U.text(c, "Q" + q, r.x + r.w / 2, r.y + r.h - 5, 11, "#9fb3d6", "center");
+        } };
+      });
       return { prompt: GH.i18n.lang === "tr" ? "Q<20 olan bazları kırp" : "Trim bases with Q<20", tiles: tiles, cols: len };
     }
   };

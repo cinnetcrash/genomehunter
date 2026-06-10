@@ -171,7 +171,9 @@
   };
 
   function loop(ts) {
-    var dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts;
+    var dt = (ts - last) / 1000; last = ts;
+    if (!(dt > 0)) dt = 1 / 60;          // guard against 0/NaN frames (prevents stalls)
+    if (dt > 0.05) dt = 0.05;            // clamp big gaps (tab switch, etc.)
     syncInput();
 
     var sc = A.top();
@@ -181,11 +183,16 @@
     ctx.clearRect(0, 0, A.W, A.H);
     if (sc && sc.render) sc.render(ctx);
 
-    // fade
-    if (A.fade.dir !== 0) {
-      A.fade.a += A.fade.dir * dt * 3;
-      if (A.fade.a >= 1) { A.fade.a = 1; if (A.fade.cb) { var cb = A.fade.cb; A.fade.cb = null; cb(); } A.fade.dir = -1; }
-      else if (A.fade.a <= 0) { A.fade.a = 0; A.fade.dir = 0; }
+    // fade — fade-out (dir>0) and fade-in (dir<0) handled separately so a
+    // dt==0 frame can never cancel an in-progress transition at a==0.
+    if (A.fade.dir > 0) {
+      A.fade.a = Math.min(1, A.fade.a + dt * 3);
+      if (A.fade.a >= 1) { if (A.fade.cb) { var cb = A.fade.cb; A.fade.cb = null; cb(); } A.fade.dir = -1; }
+    } else if (A.fade.dir < 0) {
+      A.fade.a = Math.max(0, A.fade.a - dt * 3);
+      if (A.fade.a <= 0) { A.fade.a = 0; A.fade.dir = 0; }
+    }
+    if (A.fade.a > 0) {
       ctx.fillStyle = "rgba(8,10,20," + A.fade.a + ")";
       ctx.fillRect(0, 0, A.W, A.H);
     }

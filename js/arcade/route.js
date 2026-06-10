@@ -23,15 +23,16 @@
 
   A.RouteScene.prototype.startBattle = function () {
     var self = this, level = this.level;
+    // NOTE: onWin/onLose are invoked by BattleScene at the fade midpoint
+    // (inside an active transition), so they must replace the scene DIRECTLY
+    // and must NOT start another transition (that would cancel this one).
     var b = new A.BattleScene(this.plan, this.diff,
       function () { // win
-        A.transition(function () {
-          if (level >= A.MAX_LEVEL) A.replace(new A.ChampionScene());
-          else A.replace(new A.RouteScene(level + 1));
-        });
+        if (level >= A.MAX_LEVEL) A.replace(new A.ChampionScene());
+        else A.replace(new A.RouteScene(level + 1));
       },
       function () { // lose -> retry same level
-        A.transition(function () { self.startBattle(); });
+        self.startBattle();
       });
     A.replace(b);
   };

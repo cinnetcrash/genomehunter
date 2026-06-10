@@ -51,6 +51,22 @@
     },
     fail: function () {
       [330, 247, 175].forEach(function (f, i) { setTimeout(function () { tone(f, 0.2, "sawtooth", 0.16); }, i * 150); });
-    }
+    },
+    // FPS sounds
+    shoot: function () {
+      if (muted) return;
+      var c = ac(); if (!c) return;
+      var t0 = c.currentTime;
+      var o = c.createOscillator(), g = c.createGain();
+      o.type = "square";
+      o.frequency.setValueAtTime(880, t0);
+      o.frequency.exponentialRampToValueAtTime(120, t0 + 0.12);
+      g.gain.setValueAtTime(0.16, t0);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.14);
+      o.connect(g).connect(c.destination); o.start(t0); o.stop(t0 + 0.16);
+    },
+    hit: function () { tone(740, 0.09, "sine", 0.18); setTimeout(function () { tone(1100, 0.1, "sine", 0.16); }, 60); },
+    miss: function () { tone(120, 0.18, "sawtooth", 0.14); },
+    step: function () { tone(90, 0.05, "sine", 0.05); }
   };
 })(window.GH = window.GH || {});

@@ -1,0 +1,86 @@
+/* GenomeHunter Arcade — page shell + pixel canvas + touch controls */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  background: #05080f;
+  font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+  color: #eaf2ff;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+#wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(1000px 600px at 50% 0%, #13254a, #05080f 70%);
+}
+#game {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #0a1226;
+  border: 3px solid #1c2c52;
+  border-radius: 6px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(70, 214, 200, 0.15);
+  touch-action: none;
+}
+
+/* ---- touch controls ---- */
+#touch {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 14px 18px;
+  pointer-events: none;
+  z-index: 20;
+}
+#dpad, #acts { pointer-events: auto; }
+#dpad { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.trow { display: flex; gap: 4px; }
+#acts { display: flex; gap: 12px; align-items: center; }
+.tb {
+  width: 52px; height: 52px;
+  border-radius: 12px;
+  border: 2px solid rgba(120, 150, 200, 0.5);
+  background: rgba(20, 32, 58, 0.8);
+  color: #eaf2ff;
+  font-size: 20px;
+  font-weight: bold;
+  backdrop-filter: blur(4px);
+}
+.tb:active { background: rgba(70, 214, 200, 0.4); }
+.tb-a { background: rgba(70, 214, 200, 0.35); border-color: #46d6c8; }
+.tb-b { background: rgba(240, 106, 106, 0.3); border-color: #f06a6a; }
+
+/* ---- name overlay ---- */
+#nameOverlay {
+  position: fixed; inset: 0; z-index: 40;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(5, 8, 15, 0.8);
+}
+#nameBox {
+  background: #12203c; border: 2px solid #46d6c8; border-radius: 12px;
+  padding: 22px 26px; display: flex; flex-direction: column; gap: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6); min-width: 260px;
+}
+#nameBox label { font-size: 16px; font-weight: bold; }
+#nameInput {
+  font-size: 18px; padding: 10px 12px; border-radius: 8px;
+  border: 2px solid #26375c; background: #0a1226; color: #eaf2ff; text-align: center;
+}
+#nameInput:focus { outline: none; border-color: #46d6c8; }
+#nameBtn {
+  font-size: 16px; font-weight: bold; padding: 11px; border-radius: 8px;
+  border: none; cursor: pointer;
+  background: linear-gradient(135deg, #46d6c8, #2fa9d6); color: #06202a;
+}
+#nameBtn:active { transform: translateY(1px); }
+
+@media (max-width: 700px) {
+  #game { width: 100% !important; height: auto !important; border-radius: 0; }
+}

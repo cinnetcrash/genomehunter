@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="description" content="GenomeHunter — çocuklar için biyoinformatik macera oyunu. DNA örneğinden tam genoma: örnek toplama, DNA ekstraksiyonu, dizileme, kalite kontrol, assembly ve anotasyon." />
+  <meta name="theme-color" content="#0a1226" />
+  <title>GenomeHunter — DNA'dan Genoma Macera</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🧬</text></svg>" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app" class="gh-app"><noscript>Bu oyun için JavaScript gereklidir. / This game requires JavaScript.</noscript></div>
+
+  <!-- background DNA helix -->
+  <canvas id="gh-bg" class="gh-bg" aria-hidden="true"></canvas>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/characters.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/levels/level1.js"></script>
+  <script src="js/levels/level2.js"></script>
+  <script src="js/levels/level3.js"></script>
+  <script src="js/levels/level4.js"></script>
+  <script src="js/levels/level5.js"></script>
+  <script src="js/levels/level6.js"></script>
+  <script>
+    // Animated DNA-helix background (decorative).
+    (function () {
+      var c = document.getElementById("gh-bg"), g = c.getContext("2d"), t = 0;
+      function size() { c.width = innerWidth; c.height = innerHeight; }
+      size(); addEventListener("resize", size);
+      var cols = ["#46d6c8", "#f0b65a", "#d678c8", "#7ad67a"];
+      function frame() {
+        t += 0.012;
+        g.clearRect(0, 0, c.width, c.height);
+        var n = 7, gapY = c.height / (n + 1);
+        for (var k = 0; k < n; k++) {
+          var baseY = gapY * (k + 1) + Math.sin(t + k) * 8;
+          for (var x = 0; x < c.width; x += 26) {
+            var ph = x * 0.025 + t * 1.2 + k;
+            var y1 = baseY + Math.sin(ph) * 22;
+            var y2 = baseY - Math.sin(ph) * 22;
+            g.globalAlpha = 0.10;
+            g.strokeStyle = "#8fb7ff"; g.lineWidth = 1;
+            g.beginPath(); g.moveTo(x, y1); g.lineTo(x, y2); g.stroke();
+            g.globalAlpha = 0.16;
+            g.fillStyle = cols[(Math.floor(x / 26) + k) % 4];
+            g.beginPath(); g.arc(x, y1, 2.4, 0, 7); g.fill();
+            g.fillStyle = cols[(Math.floor(x / 26) + k + 2) % 4];
+            g.beginPath(); g.arc(x, y2, 2.4, 0, 7); g.fill();
+          }
+        }
+        g.globalAlpha = 1;
+        requestAnimationFrame(frame);
+      }
+      frame();
+    })();
+    GH.boot();
+  </script>
+</body>
+</html>

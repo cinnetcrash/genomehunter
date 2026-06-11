@@ -51,6 +51,7 @@
     var items = [];
     if (A.save.level > 1) items.push({ k: "continue", label: function () { return A.t("d3_continue") + " (Sv " + A.save.level + ")"; } });
     items.push({ k: "new", label: function () { return A.t("d3_new_game"); } });
+    if (A.collection.owned().length) items.push({ k: "collection", label: function () { return "🃏 " + A.t("col_menu"); } });
     items.push({ k: "board", label: function () { return "🏆 " + A.t("sb_title"); } });
     items.push({ k: "lang", label: function () { return GH.i18n.lang === "tr" ? "Language: English" : "Dil: Türkçe"; } });
     items.push({ k: "classic", label: function () { return A.t("d3_classic"); } });
@@ -71,7 +72,8 @@
     var it = this.menu.items[this.menu.sel]; GH.audio.good();
     if (it.k === "lang") { GH.i18n.set(GH.i18n.lang === "tr" ? "en" : "tr"); A.persist(); return; }
     if (it.k === "classic") { window.location.href = "classic/index.html"; return; }
-    if (it.k === "board") { var s = this; A.transition(function () { A.replace(new A.ScoreboardScene(true)); }); return; }
+    if (it.k === "board") { A.transition(function () { A.replace(new A.ScoreboardScene(true)); }); return; }
+    if (it.k === "collection") { A.transition(function () { A.replace(new A.CollectionScene(function () { A.replace(new A.TitleScene()); })); }); return; }
     if (it.k === "continue") { A.transition(function () { A.replace(new A.OverworldScene()); }); return; }
     if (it.k === "new") {
       A.askName(function () {
@@ -114,17 +116,20 @@
   // ===================== INTRO =====================
   A.IntroScene = function () {};
   A.IntroScene.prototype.enter = function () {
+    A.collection.grantStarter();   // give the player their first G-nome
     var n = A.save.name || (GH.i18n.lang === "tr" ? "Avcı" : "Hunter");
     var L = GH.i18n.lang === "tr" ? [
       "Merhaba! Ben Profesör Margaret Dayhoff, biyoinformatiğin kurucusuyum.",
       "Genom Bölgesi'ne hoş geldin, " + n + "! Burada DNA, vahşi Genom-mon'lar olarak yaşar.",
       "Onları yakalamak için bilim kullanırız: örnek al, DNA çıkar, dizile, kaliteyi kontrol et, birleştir ve genleri bul!",
-      "Her seviye biraz daha zor. 1000 seviyeyi geçip GENOM ŞAMPİYONU olabilecek misin? Hadi başlayalım!"
+      "Her seviye biraz daha zor. 1000 seviyeyi geçip GENOM ŞAMPİYONU olabilecek misin?",
+      A.t("starter_msg")
     ] : [
       "Hello! I'm Professor Margaret Dayhoff, founder of bioinformatics.",
       "Welcome to the Genome Region, " + n + "! Here, DNA lives as wild Genome-mon.",
       "To catch them we use science: take a sample, extract DNA, sequence it, check quality, assemble and find genes!",
-      "Each level gets harder. Can you clear 1000 levels and become the GENOME CHAMPION? Let's go!"
+      "Each level gets harder. Can you clear 1000 levels and become the GENOME CHAMPION?",
+      A.t("starter_msg")
     ];
     this.dlg = new U.Dialogue(L, A.profPortrait);
   };

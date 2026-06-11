@@ -83,31 +83,53 @@
   };
 
   // ---------- CHARACTERS ----------
-  // generic person sprite. facing 0=down,1=up,2=left,3=right ; frame for walk bob
-  // opts: {shirt, hair, cap} colors
+  // generic person sprite. facing 0=down,1=up,2=left,3=right.
+  // frame 0..3 = 4-frame walk cycle (0,2 neutral; 1 left stride; 3 right stride).
+  // opts: {shirt, hair, leg, coat, bun, glasses, idle(t for breathing)}
   A.person = function (c, x, y, facing, frame, opts) {
     opts = opts || {};
+    frame = (frame || 0) % 4;
     var shirt = opts.shirt || "#2f7be0", hair = opts.hair || "#46d6c8", legc = opts.leg || "#26456e";
-    var legY = frame ? 1 : 0;
-    c.fillStyle = shirt;
-    outline(c, function () { rr(c, x + 2, y + 6, 8, 8, 2); }, null, 1.5); c.fill();
-    if (opts.coat) { c.fillStyle = hair === "#cbd3df" ? "#46d6c8" : "#fff"; c.fillRect(x + 5.2, y + 6, 1.6, 8); }
+    // stride: -1 left foot fwd, +1 right foot fwd, 0 neutral
+    var stride = frame === 1 ? -1 : frame === 3 ? 1 : 0;
+    var bobY = (frame === 1 || frame === 3) ? -1 : 0;          // little hop mid-stride
+    if (opts.idle != null) bobY += Math.sin(opts.idle * 3) * 0.6; // idle breathing
+    var bx = x, by = y + bobY;
+
+    // shadow
+    c.fillStyle = "rgba(0,0,0,0.18)";
+    c.beginPath(); c.ellipse(bx + 6, y + 16, 5, 1.8, 0, 0, 7); c.fill();
+
+    // legs (alternating stride)
     c.fillStyle = legc;
-    c.fillRect(x + 3, y + 13, 2, 3 - legY); c.fillRect(x + 7, y + 13, 2, 2 + legY);
+    if (facing === 2 || facing === 3) {
+      c.fillRect(bx + 4 + stride, by + 13, 2.4, 3); c.fillRect(bx + 6 - stride, by + 13, 2.4, 3);
+    } else {
+      c.fillRect(bx + 3, by + 13 - (stride > 0 ? 1 : 0), 2.2, 3); c.fillRect(bx + 7, by + 13 - (stride < 0 ? 1 : 0), 2.2, 3);
+    }
+    // body
+    c.fillStyle = shirt;
+    outline(c, function () { rr(c, bx + 2, by + 6, 8, 8, 2); }, null, 1.5); c.fill();
+    if (opts.coat) { c.fillStyle = (hair === "#cbd3df") ? "#46d6c8" : "#46d6c8"; c.fillRect(bx + 5.2, by + 6, 1.6, 8); }
+    // arms swing (opposite to legs)
+    c.fillStyle = shirt;
+    c.fillRect(bx + 1, by + 7 + stride, 2, 4); c.fillRect(bx + 9, by + 7 - stride, 2, 4);
+    // head
     c.fillStyle = "#f1c9a5";
-    outline(c, function () { c.beginPath(); c.arc(x + 6, y + 4, 4, 0, 7); c.closePath(); }, null, 1.5); c.fill();
+    outline(c, function () { c.beginPath(); c.arc(bx + 6, by + 4, 4, 0, 7); c.closePath(); }, null, 1.5); c.fill();
+    // hair
     c.fillStyle = hair;
-    c.beginPath(); c.arc(x + 6, y + 3, 4, Math.PI, 0); c.fill();
-    c.fillRect(x + 2, y + 2, 8, 2);
-    if (opts.bun) { c.beginPath(); c.arc(x + 6, y + 1, 2, 0, 7); c.fill(); }
-    if (facing === 1) return; // back
+    c.beginPath(); c.arc(bx + 6, by + 3, 4, Math.PI, 0); c.fill();
+    c.fillRect(bx + 2, by + 2, 8, 2);
+    if (opts.bun) { c.beginPath(); c.arc(bx + 6, by + 1, 2, 0, 7); c.fill(); }
+    if (facing === 1) return; // back: no face
     c.fillStyle = "#15203a";
-    if (facing === 2) c.fillRect(x + 4, y + 4, 1.4, 1.4);
-    else if (facing === 3) c.fillRect(x + 7.5, y + 4, 1.4, 1.4);
-    else { c.fillRect(x + 4, y + 4, 1.4, 1.4); c.fillRect(x + 7.5, y + 4, 1.4, 1.4); }
-    if (opts.glasses && facing !== 1) {
+    if (facing === 2) c.fillRect(bx + 4, by + 4, 1.4, 1.4);
+    else if (facing === 3) c.fillRect(bx + 7.5, by + 4, 1.4, 1.4);
+    else { c.fillRect(bx + 4, by + 4, 1.4, 1.4); c.fillRect(bx + 7.5, by + 4, 1.4, 1.4); }
+    if (opts.glasses) {
       c.strokeStyle = "#15203a"; c.lineWidth = 0.7;
-      c.strokeRect(x + 3.6, y + 3.4, 2.2, 1.7); c.strokeRect(x + 6.4, y + 3.4, 2.2, 1.7);
+      c.strokeRect(bx + 3.6, by + 3.4, 2.2, 1.7); c.strokeRect(bx + 6.4, by + 3.4, 2.2, 1.7);
     }
   };
   // player wrapper
@@ -266,6 +288,63 @@
       eyes(c, cx, cy + r * 0.25, r * 0.34, r * 0.18);
     }
   };
+
+  // ---- extra G-nome species shapes ----
+  // 9 Plazmiton — circular plasmid ring
+  A.mon.Plazmiton = function (c, cx, cy, r, bob) {
+    cy += bob;
+    c.strokeStyle = "#f0b65a"; c.lineWidth = 4;
+    c.beginPath(); c.arc(cx, cy, r * 0.8, 0, 7); c.stroke();
+    c.strokeStyle = "#10182c"; c.lineWidth = 1;
+    c.beginPath(); c.arc(cx, cy, r * 0.95, 0, 7); c.stroke();
+    c.beginPath(); c.arc(cx, cy, r * 0.62, 0, 7); c.stroke();
+    c.fillStyle = "#46d6c8";
+    [0, 1.6, 3.1, 4.7].forEach(function (a) { c.beginPath(); c.arc(cx + Math.cos(a) * r * 0.8, cy + Math.sin(a) * r * 0.8, 2.4, 0, 7); c.fill(); });
+    eyes(c, cx, cy - r * 0.05, r * 0.32, r * 0.18);
+  };
+  // 10 Ribozom — ribosome (two stacked blobs)
+  A.mon.Ribozom = function (c, cx, cy, r, bob) {
+    cy += bob;
+    c.fillStyle = "#c89bd6";
+    outline(c, function () { c.beginPath(); c.arc(cx, cy + r * 0.35, r * 0.85, 0, 7); c.closePath(); }, null, 2.5); c.fill();
+    c.fillStyle = "#a06ab0";
+    outline(c, function () { c.beginPath(); c.arc(cx, cy - r * 0.45, r * 0.6, 0, 7); c.closePath(); }, null, 2.5); c.fill();
+    c.fillStyle = "#7a4a8a"; for (var i = 0; i < 5; i++) { c.beginPath(); c.arc(cx - r * 0.5 + i * r * 0.25, cy + r * 0.4, 1.6, 0, 7); c.fill(); }
+    eyes(c, cx, cy - r * 0.45, r * 0.3, r * 0.16);
+  };
+  // 11 Enzimon — enzyme pac-man with active site
+  A.mon.Enzimon = function (c, cx, cy, r, bob) {
+    cy += bob;
+    c.fillStyle = "#7ad67a";
+    outline(c, function () { c.beginPath(); c.moveTo(cx, cy); c.arc(cx, cy, r, 0.5, -0.5); c.closePath(); }, null, 2.5); c.fill();
+    c.fillStyle = "#f0b65a"; c.beginPath(); c.arc(cx + r * 0.3, cy + r * 0.05, r * 0.18, 0, 7); c.fill(); // substrate
+    eyes(c, cx - r * 0.1, cy - r * 0.4, r * 0.28, r * 0.16);
+  };
+  // 12 Kromozor — X chromosome
+  A.mon.Kromozor = function (c, cx, cy, r, bob) {
+    cy += bob;
+    c.strokeStyle = "#f06a6a"; c.lineWidth = r * 0.55; c.lineCap = "round";
+    c.beginPath(); c.moveTo(cx - r * 0.6, cy - r * 0.8); c.lineTo(cx + r * 0.6, cy + r * 0.8); c.stroke();
+    c.beginPath(); c.moveTo(cx + r * 0.6, cy - r * 0.8); c.lineTo(cx - r * 0.6, cy + r * 0.8); c.stroke();
+    c.fillStyle = "#f0b65a"; c.beginPath(); c.arc(cx, cy, r * 0.22, 0, 7); c.fill(); // centromere
+    eyes(c, cx, cy - r * 0.05, r * 0.34, r * 0.18);
+  };
+
+  // Type colors + aura helper for cards/battle
+  A.TYPE_COLORS = { DNA: "#46d6c8", RNA: "#f0b65a", PROT: "#d678c8", VIRUS: "#8a7ef0", MICROBE: "#7ad67a", DATA: "#5ab0e8" };
+  A.gnomeAura = function (c, cx, cy, r, color, t) {
+    c.save();
+    var pulse = 1 + Math.sin((t || 0) * 3) * 0.06;
+    var g = c.createRadialGradient(cx, cy, r * 0.2, cx, cy, r * 1.7 * pulse);
+    g.addColorStop(0, color + "00"); g.addColorStop(0.6, hexA(color, 0.28)); g.addColorStop(1, color + "00");
+    c.fillStyle = g; c.beginPath(); c.arc(cx, cy, r * 1.7 * pulse, 0, 7); c.fill();
+    c.restore();
+  };
+  function hexA(hex, a) {
+    var h = hex.replace("#", ""); var n = parseInt(h, 16);
+    return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
+  }
+  A.hexA = hexA;
 
   // Badge icon for an area color
   A.badge = function (c, cx, cy, r, color, sym) {

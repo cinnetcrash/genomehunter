@@ -74,7 +74,8 @@
   var SAVE_KEY = "gh_arcade_v1";
   A.save = {
     level: 1, best: 1, badges: {}, totalScore: 0,
-    seenTutorial: {}, lang: "tr"
+    seenTutorial: {}, lang: "tr",
+    collection: {}, active: null, px: null, py: null
   };
   A.load = function () {
     try {

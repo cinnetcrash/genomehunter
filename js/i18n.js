@@ -166,7 +166,19 @@
       sb_no_scores: "Henüz skor yok — ilk sen ol!",
       sb_submit: "Kaydet",
       sb_global_note: "Bu cihazdaki en iyi skorlar. (Global tablo yakında)",
-      sb_new_record: "YENİ REKOR!"
+      sb_new_record: "YENİ REKOR!",
+
+      /* collection / cards */
+      col_title: "G-nome Koleksiyonu",
+      col_active: "AKTİF",
+      col_setactive: "Z: Aktif Yap",
+      col_locked: "Henüz yakalanmadı",
+      col_owned: "Yakalanan",
+      col_ability: "Yetenek",
+      col_menu: "Koleksiyon",
+      col_resume: "Oyuna Dön",
+      st_atk: "ATK", st_sta: "STA", st_spd: "HIZ",
+      starter_msg: "İşte ilk G-nome'un: Helikon! O senin yanında savaşacak. Daha fazlasını yakala!"
     },
 
     en: {
@@ -325,7 +337,19 @@
       sb_no_scores: "No scores yet — be the first!",
       sb_submit: "Save",
       sb_global_note: "Best scores on this device. (Global board coming soon)",
-      sb_new_record: "NEW RECORD!"
+      sb_new_record: "NEW RECORD!",
+
+      /* collection / cards */
+      col_title: "G-nome Collection",
+      col_active: "ACTIVE",
+      col_setactive: "Z: Set Active",
+      col_locked: "Not caught yet",
+      col_owned: "Caught",
+      col_ability: "Ability",
+      col_menu: "Collection",
+      col_resume: "Resume",
+      st_atk: "ATK", st_sta: "STA", st_spd: "SPD",
+      starter_msg: "Here is your first G-nome: Helicon! It will fight by your side. Go catch more!"
     }
   };
 

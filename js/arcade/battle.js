@@ -4,22 +4,69 @@
   var A = (GH.A = GH.A || {});
   var U = A.ui;
 
+  // Flashy Pokémon-style transition that plays before a battle, then swaps in the battle.
+  A.EncounterIntroScene = function (battle) { this.b = battle; this.t = 0; };
+  A.EncounterIntroScene.prototype.update = function (dt) {
+    this.t += dt;
+    if (this.t >= 0.9) { A.replace(this.b); }
+  };
+  A.EncounterIntroScene.prototype.render = function (c) {
+    var W = A.W, H = A.H, t = this.t, b = this.b;
+    var z = b.plan.zone;
+    var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, z.sky[0]); g.addColorStop(1, z.sky[1]);
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    // sweeping diagonal bars
+    var prog = Math.min(1, t / 0.55);
+    c.fillStyle = "rgba(8,12,24,0.92)";
+    var bars = 8, bw = W / bars;
+    for (var i = 0; i < bars; i++) {
+      var dir = i % 2 ? 1 : -1;
+      var h = H * prog;
+      if (dir > 0) c.fillRect(i * bw, 0, bw + 1, h);
+      else c.fillRect(i * bw, H - h, bw + 1, h);
+    }
+    // white flashes early
+    if (t < 0.45 && Math.floor(t / 0.08) % 2 === 0) { c.fillStyle = "rgba(255,255,255,0.5)"; c.fillRect(0, 0, W, H); }
+    // wild sprite zooms in
+    if (t > 0.4) {
+      var s = b.species, tcol = A.TYPE_COLORS[s.type] || "#46d6c8";
+      var sc = Math.min(1.2, (t - 0.4) / 0.3) ;
+      c.save(); c.translate(W / 2, H / 2); c.scale(sc, sc);
+      A.gnomeAura(c, 0, 0, 30, tcol, t * 2);
+      A.mon[s.sprite](c, 0, 0, 30, 0);
+      c.restore();
+      U.textO(c, "!", W / 2 + 40, H / 2 - 30, 24, "#ffd84d", "center");
+    }
+  };
+
   A.BattleScene = function (plan, diff, onWin, onLose) {
     this.plan = plan; this.diff = diff; this.onWin = onWin; this.onLose = onLose;
     this.ch = A.CHALLENGES[plan.type.scene];
     this.state = {};
-    this.maxHP = Math.max(1, this.ch.hp(diff));
+    // wild G-nome species (card stats); stamina scales its HP
+    this.species = plan.species || A.rollWild(diff.L, plan.isBoss);
+    var wildSta = this.species ? this.species.sta : 3;
+    this.maxHP = Math.max(1, Math.round(this.ch.hp(diff) * (0.8 + wildSta * 0.08)));
     this.hp = this.maxHP;
     this.maxHearts = diff.hearts; this.hearts = diff.hearts;
     this.timeMax = diff.time; this.time = diff.time;
     this.combo = 0; this.score = 0;
+    this.scoreMul = 1; this.shield = 0; this.healReady = false;
     this.sel = 0; this.bob = 0; this.shake = 0; this.flash = 0; this.monHurt = 0;
     this.phase = "appear";
     this.popups = [];
   };
 
   A.BattleScene.prototype.enter = function () {
-    var monName = A.t(this.plan.type.key + "_mon");
+    // active G-nome bonuses + signature ability
+    var ab = A.activeBonuses();
+    this.active = ab.species;
+    this.maxHearts += ab.bonusHearts; this.hearts = this.maxHearts;
+    this.timeMax += ab.bonusTime; this.time = this.timeMax;
+    this.scoreMul *= ab.scoreMul;
+    var abil = A.ABILITIES[this.active.ability]; if (abil) abil.apply(this);
+
+    var monName = this.species.name[GH.i18n.lang];
     var lines = [A.t("d3_wild_appeared").replace("{X}", monName)];
     if (!A.save.seenTutorial[this.plan.type.scene]) {
       lines.push(this.ch.tutorial(GH.i18n.lang));
@@ -117,7 +164,7 @@
       tile.taken = true;
       this.combo++;
       var timeBonus = 1 + this.time / this.timeMax;
-      var gain = Math.round((10 + this.combo * 3) * timeBonus * (this.plan.isBoss ? 1.5 : 1) * (1 + this.diff.L * 0.01));
+      var gain = Math.round((10 + this.combo * 3) * timeBonus * (this.plan.isBoss ? 1.5 : 1) * (1 + this.diff.L * 0.01) * this.scoreMul);
       this.score += gain;
       this.hp = Math.max(0, this.hp - 1);
       this.monHurt = 0.25; this.flash = 0.12;
@@ -125,21 +172,29 @@
       this.popup("+" + gain, "#7ad67a", r.x + r.w / 2, r.y);
       if (this.ch.onCorrect) this.ch.onCorrect(this.state);
       if (this.hp <= 0) { this.win(); return; }
-      // rebuild grid if no correct tiles remain
       var remain = this.grid.tiles.filter(function (t) { return t.correct && !t.taken; }).length;
       if (remain === 0) this.newGrid();
     } else {
-      this.hearts--; this.combo = 0; this.shake = 0.3;
-      GH.audio.miss();
-      this.popup("✕", "#f06a6a", r.x + r.w / 2, r.y);
-      if (this.hearts <= 0) { this.fail(); }
+      if (this.shield > 0) { // Lucky ability: ignore first miss
+        this.shield--; this.shake = 0.2;
+        GH.audio.miss(); this.popup("🛡", "#ffd84d", r.x + r.w / 2, r.y);
+      } else {
+        this.hearts--; this.combo = 0; this.shake = 0.3;
+        GH.audio.miss();
+        this.popup("✕", "#f06a6a", r.x + r.w / 2, r.y);
+        // Healer ability: restore once when dropping to 1 heart
+        if (this.hearts === 1 && this.healReady) { this.healReady = false; this.hearts = 2; this.popup("+❤", "#7ad67a", A.W / 2, 96); GH.audio.good(); }
+        if (this.hearts <= 0) { this.fail(); }
+      }
     }
   };
 
   A.BattleScene.prototype.win = function () {
     this.phase = "win";
-    A.save.totalScore += this.score; A.persist();
-    var monName = A.t(this.plan.type.key + "_mon");
+    A.save.totalScore += this.score;
+    A.collection.add(this.species.id);   // add caught G-nome to collection
+    A.persist();
+    var monName = this.species.name[GH.i18n.lang];
     var lines = [A.t("d3_caught").replace("{X}", monName)];
     if (this.plan.isBoss) lines.push(A.t("d3_badge_get").replace("{X}", A.t(this.plan.type.key + "_name")));
     this.dlg = new U.Dialogue(lines, A.profPortrait);
@@ -170,18 +225,31 @@
     U.textO(c, plan.zone.name[GH.i18n.lang], W / 2, 18, 12, "#eaf2ff", "center");
     U.textO(c, A.t("sb_score") + " " + this.score, W - 8, 18, 12, "#ffd84d", "right");
 
-    // monster
-    var mon = A.mon[plan.type.mon] || A.mon.Numune;
+    // wild G-nome: aura + sprite
+    var sp = this.species, tcol = A.TYPE_COLORS[sp.type] || "#46d6c8";
+    var mon = A.mon[sp.sprite] || A.mon.Numune;
     var bobY = Math.sin(this.bob * 3) * 3;
+    A.gnomeAura(c, W / 2, 52, plan.isBoss ? 30 : 24, tcol, this.bob);
     c.save();
     if (this.monHurt > 0) { c.globalAlpha = Math.floor(this.bob * 30) % 2 ? 0.4 : 1; }
     mon(c, W / 2, 52, plan.isBoss ? 30 : 24, bobY);
     c.restore();
 
-    // HP bar
-    U.text(c, A.t("a" + plan.type.key.slice(1) + "_mon") || plan.type.mon, W / 2 - 70, 80, 11, "#fff", "left");
+    // wild name + type badge + HP bar
+    U.text(c, sp.name[GH.i18n.lang] + (plan.isBoss ? " ★" : ""), W / 2 - 70, 80, 11, "#fff", "left");
+    U.typeBadge(c, sp.type, W / 2 + 30, 73, tcol);
     U.bar(c, W / 2 - 70, 84, 140, 8, this.hp / this.maxHP, "#f0556e");
     U.text(c, this.hp + "/" + this.maxHP, W / 2 + 74, 91, 9, "#cdd7ea", "left");
+
+    // your active fighter (mini card, bottom-left of arena)
+    if (this.active) {
+      var fa = this.active, fc = A.TYPE_COLORS[fa.type] || "#46d6c8";
+      U.panel(c, 6, 122, 96, 22, { r: 5, stroke: fc });
+      A.mon[fa.sprite](c, 17, 133, 8, Math.sin(this.bob * 2) * 1.5);
+      U.text(c, fa.name[GH.i18n.lang], 30, 130, 9, "#fff", "left");
+      var abil = A.ABILITIES[fa.ability];
+      U.text(c, abil ? abil.name[GH.i18n.lang] : "", 30, 140, 8, fc, "left");
+    }
 
     // hearts + timer + combo
     U.hearts(c, 18, 102, this.hearts, this.maxHearts);

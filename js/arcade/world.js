@@ -107,6 +107,13 @@
       return;
     }
 
+    // open G-nome collection (X / back)
+    if (A.pressed("back")) {
+      this.save();
+      A.transition(function () { A.replace(new A.CollectionScene(function () { A.replace(new A.OverworldScene()); })); });
+      return;
+    }
+
     // NPC wander
     for (var i = 0; i < this.npcs.length; i++) this.stepEntity(this.npcs[i], dt, true);
 
@@ -133,7 +140,7 @@
       e.mt += dt; var dur = isNpc ? 0.24 : 0.16, t = Math.min(1, e.mt / dur);
       e.px = (e.gx + (e.tx - e.gx) * t) * TILE;
       e.py = (e.gy + (e.ty - e.gy) * t) * TILE;
-      e.frame = Math.floor(e.mt * 8) % 2;
+      e.frame = [1, 0, 3, 0][Math.floor(t * 4) % 4];  // 4-frame stride per tile
       if (t >= 1) {
         e.gx = e.tx; e.gy = e.ty; e.px = e.gx * TILE; e.py = e.gy * TILE; e.moving = false; e.frame = 0;
         if (!isNpc) this.onStep();
@@ -198,7 +205,8 @@
       function () { // LOSE — return to world, no level change
         var w = new A.OverworldScene(); A.replace(w);
       });
-    A.transition(function () { A.replace(b); });
+    // play the flashy encounter intro, then the battle
+    A.transition(function () { A.replace(new A.EncounterIntroScene(b)); });
   };
 
   A.OverworldScene.prototype.enter = function () {
@@ -257,7 +265,7 @@
     if (this.dlg) this.dlg.render(c);
     else {
       // controls hint (brief)
-      U.text(c, GH.i18n.lang === "tr" ? "Ok tuşları: yürü · Z: konuş/onayla" : "Arrows: walk · Z: talk/confirm", W / 2, H - 7, 9, "rgba(255,255,255,0.55)", "center");
+      U.text(c, GH.i18n.lang === "tr" ? "Ok: yürü · Z: konuş · X: Koleksiyon" : "Arrows: walk · Z: talk · X: Collection", W / 2, H - 7, 9, "rgba(255,255,255,0.55)", "center");
     }
   };
 

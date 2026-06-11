@@ -113,6 +113,25 @@
       U.text(c, "▼", x + w - 16, y + h - 8, 12, "#46d6c8");
   };
 
+  // small type pill (DNA/RNA/PROT/VIRUS/MICROBE/DATA)
+  U.typeBadge = function (c, type, x, y, color) {
+    c.font = "bold 8px " + FONT; c.textAlign = "left"; c.textBaseline = "alphabetic";
+    var w = c.measureText(type).width + 8;
+    c.fillStyle = color; U.rr(c, x, y, w, 11, 4); c.fill();
+    c.fillStyle = "#0a1226"; c.fillText(type, x + 4, y + 8.5);
+    return w;
+  };
+  // stat bar (label + filled pips out of 5)
+  U.statBar = function (c, label, val, x, y, color) {
+    U.text(c, label, x, y + 6, 8, "#cdd7ea", "left");
+    for (var i = 0; i < 5; i++) {
+      c.fillStyle = i < val ? (color || "#46d6c8") : "rgba(255,255,255,0.16)";
+      U.rr(c, x + 22 + i * 8, y, 6, 7, 2); c.fill();
+    }
+  };
+  // rarity stars
+  U.stars = function (n) { return Array(n + 1).join("★") + Array(6 - n).join("☆"); };
+
   // selectable button row/list helper state
   U.Menu = function (items) { this.items = items; this.sel = 0; };
   U.Menu.prototype.move = function (d) { this.sel = (this.sel + d + this.items.length) % this.items.length; GH.audio.click(); };

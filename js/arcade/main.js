@@ -72,10 +72,11 @@
     if (it.k === "lang") { GH.i18n.set(GH.i18n.lang === "tr" ? "en" : "tr"); A.persist(); return; }
     if (it.k === "classic") { window.location.href = "classic/index.html"; return; }
     if (it.k === "board") { var s = this; A.transition(function () { A.replace(new A.ScoreboardScene(true)); }); return; }
-    if (it.k === "continue") { var lv = A.save.level; A.transition(function () { A.replace(new A.RouteScene(lv)); }); return; }
+    if (it.k === "continue") { A.transition(function () { A.replace(new A.OverworldScene()); }); return; }
     if (it.k === "new") {
       A.askName(function () {
-        A.save.level = 1; A.save.totalScore = 0; A.save.seenTutorial = {}; A.persist();
+        A.save.level = 1; A.save.totalScore = 0; A.save.seenTutorial = {};
+        A.save.px = null; A.save.py = null; A.persist();
         A.transition(function () { A.replace(new A.IntroScene()); });
       });
     }
@@ -130,7 +131,7 @@
   A.IntroScene.prototype.update = function (dt) {
     this.dlg.update(dt);
     if (A.pressed("confirm") || A.pointer.clicked) {
-      if (this.dlg.advance()) A.transition(function () { A.replace(new A.RouteScene(1)); });
+      if (this.dlg.advance()) A.transition(function () { A.replace(new A.OverworldScene()); });
     }
   };
   A.IntroScene.prototype.render = function (c) {

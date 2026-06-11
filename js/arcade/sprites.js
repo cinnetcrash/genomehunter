@@ -83,30 +83,36 @@
   };
 
   // ---------- CHARACTERS ----------
-  // player: facing 0=down,1=up,2=left,3=right ; frame for walk bob
-  A.player = function (c, x, y, facing, frame) {
+  // generic person sprite. facing 0=down,1=up,2=left,3=right ; frame for walk bob
+  // opts: {shirt, hair, cap} colors
+  A.person = function (c, x, y, facing, frame, opts) {
+    opts = opts || {};
+    var shirt = opts.shirt || "#2f7be0", hair = opts.hair || "#46d6c8", legc = opts.leg || "#26456e";
     var legY = frame ? 1 : 0;
-    // body
-    c.fillStyle = "#2f7be0";
-    outline(c, function () { rr(c, x + 2, y + 6, 8, 8, 2); }, null, 1.5);
-    c.fill();
-    // legs
-    c.fillStyle = "#26456e";
+    c.fillStyle = shirt;
+    outline(c, function () { rr(c, x + 2, y + 6, 8, 8, 2); }, null, 1.5); c.fill();
+    if (opts.coat) { c.fillStyle = hair === "#cbd3df" ? "#46d6c8" : "#fff"; c.fillRect(x + 5.2, y + 6, 1.6, 8); }
+    c.fillStyle = legc;
     c.fillRect(x + 3, y + 13, 2, 3 - legY); c.fillRect(x + 7, y + 13, 2, 2 + legY);
-    // head
     c.fillStyle = "#f1c9a5";
-    outline(c, function () { c.beginPath(); c.arc(x + 6, y + 4, 4, 0, 7); c.closePath(); }, null, 1.5);
-    c.fill();
-    // hair / cap
-    c.fillStyle = "#46d6c8";
+    outline(c, function () { c.beginPath(); c.arc(x + 6, y + 4, 4, 0, 7); c.closePath(); }, null, 1.5); c.fill();
+    c.fillStyle = hair;
     c.beginPath(); c.arc(x + 6, y + 3, 4, Math.PI, 0); c.fill();
     c.fillRect(x + 2, y + 2, 8, 2);
-    // face by facing
-    if (facing === 1) return; // back: no face
+    if (opts.bun) { c.beginPath(); c.arc(x + 6, y + 1, 2, 0, 7); c.fill(); }
+    if (facing === 1) return; // back
     c.fillStyle = "#15203a";
-    if (facing === 2) { c.fillRect(x + 4, y + 4, 1.4, 1.4); }
-    else if (facing === 3) { c.fillRect(x + 7.5, y + 4, 1.4, 1.4); }
+    if (facing === 2) c.fillRect(x + 4, y + 4, 1.4, 1.4);
+    else if (facing === 3) c.fillRect(x + 7.5, y + 4, 1.4, 1.4);
     else { c.fillRect(x + 4, y + 4, 1.4, 1.4); c.fillRect(x + 7.5, y + 4, 1.4, 1.4); }
+    if (opts.glasses && facing !== 1) {
+      c.strokeStyle = "#15203a"; c.lineWidth = 0.7;
+      c.strokeRect(x + 3.6, y + 3.4, 2.2, 1.7); c.strokeRect(x + 6.4, y + 3.4, 2.2, 1.7);
+    }
+  };
+  // player wrapper
+  A.player = function (c, x, y, facing, frame) {
+    A.person(c, x, y, facing, frame, { shirt: "#2f7be0", hair: "#46d6c8", leg: "#26456e" });
   };
 
   // Professor Dayhoff (NPC, faces down)
